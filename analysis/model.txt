@@ -3,7 +3,7 @@ model{
   #likelihood
   for(i in 1:nSurveys){
       N[i] ~ dpois(lambda[i])
-      log(lambda[i]) <- mu + siteRan[site[i]] + yearRan[year[i]] + eps[year[i],site[i]] + log(siteLength[i])
+      log(lambda[i]) <- mu + siteRan[site[i]] + yearRan[year[i]] + eps[site[i],year[i]] + log(siteLength[i])
   }
   
   #priors
@@ -26,7 +26,7 @@ model{
   }
   for(t in 1:nYears){
     for(s in 1:nSites){
-      eps[t,s]~dnorm(0,epsTau)
+      eps[s,t]~dnorm(0,epsTau)
     }
   }
   

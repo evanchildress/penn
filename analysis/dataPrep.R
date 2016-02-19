@@ -9,20 +9,21 @@ setnames(data,
            "EstimateType"),
          c("siteId","siteSurveyId","lat","long","siteLength","siteWidth",
            "species","sizeBin","count","recapCount","pass","estimateType"))
-data<-data[,list(siteId,siteSurveyId,lat,long,siteLength,siteWidth,species,sizeBin,count,recapCount,
+data<-data[species=="Brook Trout",list(siteId,siteSurveyId,lat,long,siteLength,siteWidth,species,sizeBin,count,recapCount,
                  pass,estimateType,date,month,year)]
 
 suppressWarnings(data[,recapCount:=as.numeric(recapCount)])
 
 #need to deal with cohort (or not)
 data[,stage:=as.numeric(sizeBin>=0)]
+data<-data[sizeBin>100]
 data<-data[,.(count=sum(count,na.rm=T),
               recapCount=sum(recapCount,na.rm=T)),
            by=.(species,siteId,siteSurveyId,year,stage,siteLength,siteWidth,lat,long,date,month,year,pass,estimateType)] %>%
   .[,pass:=as.character(pass)]
 
 data<-data %>% 
-  filter(estimateType=="Petersen M & R"&pass==2,species=="Brook Trout") %>%
+  filter(estimateType=="Petersen M & R"&pass==2) %>%
   mutate(pass="recap",count=recapCount) %>%
   bind_rows(data) %>%
   data.table() %>%
