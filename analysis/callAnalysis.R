@@ -16,4 +16,5 @@ nc=3
 
 inits<-function(){list(N=data[,sum(count),by=surveyIndex]$V1)}
 
-jags(jagsData,inits=inits,params,"analysis/model.txt",nc,ni,nb,nt)
+out<-jags(jagsData,inits=inits,params,"analysis/model.txt",nc,ni,nb,nt)
+saveRDS(out,"results/out.rds")
