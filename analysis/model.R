@@ -33,37 +33,58 @@ cat("model{
 #observation model
   #likelihood
   for(i in 1:nFirstPassRows){
-    y[firstPassRows[i]]~dbin(p[firstPassRows[i]],N[survey[firstPassRows[i]]])
+    y[firstPassRows[i]]~dbin(pDep[firstPassRows[i]],N[survey[firstPassRows[i]]])
   }
   for(i in 1:nSecondPassRows){
-    y[secondPassRows[i]]~dbin(p[secondPassRows[i]],N[survey[secondPassRows[i]]]-y[secondPassRows[i]-1])
+    y[secondPassRows[i]]~dbin(pDep[secondPassRows[i]],N[survey[secondPassRows[i]]]-y[secondPassRows[i]-1])
   }
   for(i in 1:nThirdPassRows){
-    y[thirdPassRows[i]]~dbin(p[thirdPassRows[i]],N[survey[thirdPassRows[i]]]-
+    y[thirdPassRows[i]]~dbin(pDep[thirdPassRows[i]],N[survey[thirdPassRows[i]]]-
                                                     y[thirdPassRows[i]-1]-
                                                     y[thirdPassRows[i]-2])
   }
   for(i in 1:nFourthPassRows){
-    y[fourthPassRows[i]]~dbin(p[fourthPassRows[i]],N[survey[fourthPassRows[i]]]-
+    y[fourthPassRows[i]]~dbin(pDep[fourthPassRows[i]],N[survey[fourthPassRows[i]]]-
                                                       y[fourthPassRows[i]-1]-
                                                       y[fourthPassRows[i]-2]-
                                                       y[fourthPassRows[i]-3])
   }
   
   for(i in 1:nRecapRows){
-    y[recapRows[i]]~dbin(p[recapRows[i]],y[recapRows[i]-2]) #1st pass captures are two rows above recaps
+    y[recapRows[i]]~dbin(pMr[recapRows[i]],y[recapRows[i]-2]) #1st pass captures are two rows above recaps
+  }
+  for(i in 1:nUnmarkedRows){
+    y[unmarkedRows[i]]~dbin(pMr[recapRows[i]],N[survey[unmarkedRows[i]]]-y[unmarkedRows[i]-1])
   }
   
-  for(i in 1:nRows){
-    logitP[i]<-muP + pEps[site[i]]
-    p[i]<-1/(1+exp(-logitP[i]))
+
+  for(i in 1:nDepRows){
+    logitPDep[depRows[i]]<-muPDep + pDepBeta*siteWidth[depRows[i]] + pDepEps[site[depRows[i]]]
+    pDep[depRows[i]]<-1/(1+exp(-logitPDep[depRows[i]]))
+  }
+
+  for(i in 1:nMrRows){
+    logitPMr[mrRows[i]]<-muPMr + pMrBeta*siteWidth[mrRows[i]] + pMrEps[site[mrRows[i]]]
+    pMr[mrRows[i]]<-1/(1+exp(-logitPMr[mrRows[i]]))
   }
   
   #priors
-  muP~dnorm(0,0.01)
-  pTau<-1/pow(pSigma,-2)
-  pSigma ~ dunif(0,10)
-  for(s in 1:nSites){
-    pEps[s]~dnorm(0,pTau)
+  muPMr~dnorm(0,0.01)
+  pMrTau<-1/pow(pMrSigma,-2)
+  pMrSigma ~ dunif(0,10)
+  pMrBeta~dnorm(0,0.01)
+  
+  for(s in 1:nMrSites){
+    pMrEps[mrSites[s]]~dnorm(0,pMrTau)
   }
+
+  muPDep~dnorm(0,0.01)
+  pDepTau<-1/pow(pDepSigma,-2)
+  pDepSigma ~ dunif(0,10)
+  pDepBeta~dnorm(0,0.01)
+
+  for(s in 1:nDepSites){
+    pDepEps[depSites[s]]~dnorm(0,pDepTau)
+  }
+
 }",file="analysis/model.txt")

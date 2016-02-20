@@ -7,10 +7,11 @@ source("analysis/dataPrep.R")
 source("analysis/model.R")
 
 
-params<-c("pSigma","muP","yearSigma","siteSigma","mu","epsSigma","eps","yearRan","siteRan","pEps")
+params<-c("pMrSigma","pDepSigma","muPMr","muPDep","pMrEps","pDepEps","pMrBeta","pDepBeta",
+          "yearSigma","siteSigma","mu","epsSigma","eps","yearRan","siteRan")
 
-ni=10000
-nb=8000
+ni=20000
+nb=18000
 nt=5
 nc=3
 

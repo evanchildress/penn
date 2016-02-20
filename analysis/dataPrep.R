@@ -9,8 +9,15 @@ setnames(data,
            "EstimateType"),
          c("siteId","siteSurveyId","lat","long","siteLength","siteWidth",
            "species","sizeBin","count","recapCount","pass","estimateType"))
-data<-data[species=="Brook Trout",list(siteId,siteSurveyId,lat,long,siteLength,siteWidth,species,sizeBin,count,recapCount,
+data<-data[species=="Brook Trout",
+           list(siteId,siteSurveyId,lat,long,siteLength,siteWidth,
+                species,sizeBin,count,recapCount,
                  pass,estimateType,date,month,year)]
+
+data[,meanSiteWidth:=mean(siteWidth,na.rm=T),by=siteId][
+  is.na(siteWidth),siteWidth:=meanSiteWidth][
+    ,meanSiteWidth:=NULL]
+data<-data[!is.na(siteWidth)]
 
 suppressWarnings(data[,recapCount:=as.numeric(recapCount)])
 
@@ -40,23 +47,34 @@ jagsData<-list(#data/survey info
                year=data$year-min(data$year)+1,
                site=data$siteIndex,
                siteLength=data[,mean(siteLength)/100,by=surveyIndex]$V1,
+               siteWidth=data$siteWidth,
                survey=data$surveyIndex,
                #control structures
                nSites=max(data$siteIndex),
                nYears=max(data$year-min(data$year)+1),
                nSurveys=max(data$surveyIndex),
                nRows=nrow(data),
-               firstPassRows=which(data$pass=="1"),
-               secondPassRows=which(data$pass=="2"),
-               thirdPassRows=which(data$pass=="3"),
-               fourthPassRows=which(data$pass=="4"),
-               recapRows=which(data$pass=="recap"))
+               firstPassRows=which(data$pass=="1"&data$estimateType!="Petersen M & R"),
+               secondPassRows=which(data$pass=="2"&data$estimateType!="Petersen M & R"),
+               thirdPassRows=which(data$pass=="3"&data$estimateType!="Petersen M & R"),
+               fourthPassRows=which(data$pass=="4"&data$estimateType!="Petersen M & R"),
+               unmarkedRows=which(data$pass=="2"&data$estimateType=="Petersen M & R"),
+               recapRows=which(data$pass=="recap"),
+               mrSites=data[estimateType=="Petersen M & R",unique(siteIndex)],
+               depSites=data[estimateType!="Petersen M & R",unique(siteIndex)])
 
+jagsData$depRows<-c(jagsData$firstPassRows,jagsData$secondPassRows,jagsData$thirdPassRows,
+                   jagsData$fourthPassRows)
+jagsData$mrRows<-c(jagsData$recapRows,jagsData$unmarkedRows)
 #higher level controls
 jagsData$nFirstPassRows<-length(jagsData$firstPassRows)
 jagsData$nSecondPassRows<-length(jagsData$secondPassRows)
 jagsData$nThirdPassRows<-length(jagsData$thirdPassRows)
 jagsData$nFourthPassRows<-length(jagsData$fourthPassRows)
-jagsData$nRecapRows<-length(jagsData$nRecapRows)
-
+jagsData$nRecapRows<-length(jagsData$recapRows)
+jagsData$nUnmarkedRows<-length(jagsData$unmarkedRows)
+jagsData$nMrSites<-length(jagsData$mrSites)
+jagsData$nDepSites<-length(jagsData$depSites)
+jagsData$nMrRows<-length(jagsData$mrRows)
+jagsData$nDepRows<-length(jagsData$depRows)
 
