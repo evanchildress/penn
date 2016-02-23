@@ -23,7 +23,7 @@ suppressWarnings(data[,recapCount:=as.numeric(recapCount)])
 
 #need to deal with cohort (or not)
 data[,stage:=as.numeric(sizeBin>=0)]
-data<-data[sizeBin>100]
+data<-data[sizeBin<100]
 data<-data[,.(count=sum(count,na.rm=T),
               recapCount=sum(recapCount,na.rm=T)),
            by=.(species,siteId,siteSurveyId,year,stage,siteLength,siteWidth,lat,long,date,month,year,pass,estimateType)] %>%
@@ -41,14 +41,28 @@ data[,surveyIndex:=which(siteSurveyId[1]==unique(data$siteSurveyId)),by=siteSurv
 data[,siteIndex:=which(siteId[1]==unique(data$siteId)),by=siteId]
 data[,yearIndex:=year-min(year)+1]
 
+
+nRolled=15
+dailyDischarge<-readRDS("results/dailyMediansPa.rds") %>%
+                .[,.(medianQ=mean(medianQ,na.rm=T)),by=date] %>%
+                setkey(date) %>%
+                .[,typicalFlow:=c(rep(NA,(nRolled-1)/2),rollmean(medianQ,nRolled),rep(NA,(nRolled-1)/2))] %>%
+                .[c((366-(nRolled-2)):366,1:(nRolled-1)),
+                  typicalFlow:=c(typicalFlow[1:((nRolled-1)/2)],
+                                rollmean(medianQ,nRolled),
+                                typicalFlow[((nRolled-1)/2*3+1):((nRolled-1)*2)])] %>%
+                .[,typicalFlow:=scale(typicalFlow)[,1]]
+
 jagsData<-list(#data/survey info
                y=data$count,
                #stage=data$stage,
                year=data$year-min(data$year)+1,
+               dayOfYear=as.numeric(format(data$date,"%j")),
                site=data$siteIndex,
                siteLength=data[,mean(siteLength)/100,by=surveyIndex]$V1,
                siteWidth=data$siteWidth,
                survey=data$surveyIndex,
+               typicalFlow=dailyDischarge$typicalFlow,
                #control structures
                nSites=max(data$siteIndex),
                nYears=max(data$year-min(data$year)+1),

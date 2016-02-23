@@ -59,12 +59,14 @@ cat("model{
   
 
   for(i in 1:nDepRows){
-    logitPDep[depRows[i]]<-muPDep + pDepBeta*siteWidth[depRows[i]] + pDepEps[site[depRows[i]]]
+    logitPDep[depRows[i]]<-muPDep + pDepBetaWidth*siteWidth[depRows[i]] +
+                            pDepBetaFlow*typicalFlow[dayOfYear[depRows[i]]] + pDepEps[site[depRows[i]]]
     pDep[depRows[i]]<-1/(1+exp(-logitPDep[depRows[i]]))
   }
 
   for(i in 1:nMrRows){
-    logitPMr[mrRows[i]]<-muPMr + pMrBeta*siteWidth[mrRows[i]] + pMrEps[site[mrRows[i]]]
+    logitPMr[mrRows[i]]<-muPMr + pMrBetaWidth*siteWidth[mrRows[i]] + 
+                          pMrBetaFlow*typicalFlow[dayOfYear[mrRows[i]]]+ pMrEps[site[mrRows[i]]]
     pMr[mrRows[i]]<-1/(1+exp(-logitPMr[mrRows[i]]))
   }
   
@@ -72,8 +74,9 @@ cat("model{
   muPMr~dnorm(0,0.01)
   pMrTau<-1/pow(pMrSigma,-2)
   pMrSigma ~ dunif(0,10)
-  pMrBeta~dnorm(0,0.01)
-  
+  pMrBetaWidth~dnorm(0,0.01)
+  pMrBetaFlow~dnorm(0,0.01)  
+
   for(s in 1:nMrSites){
     pMrEps[mrSites[s]]~dnorm(0,pMrTau)
   }
@@ -81,7 +84,8 @@ cat("model{
   muPDep~dnorm(0,0.01)
   pDepTau<-1/pow(pDepSigma,-2)
   pDepSigma ~ dunif(0,10)
-  pDepBeta~dnorm(0,0.01)
+  pDepBetaWidth~dnorm(0,0.01)
+  pDepBetaFlow~dnorm(0,0.01)
 
   for(s in 1:nDepSites){
     pDepEps[depSites[s]]~dnorm(0,pDepTau)
