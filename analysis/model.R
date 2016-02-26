@@ -4,6 +4,7 @@ cat("model{
   for(i in 1:nSurveys){
       N[i] ~ dpois(lambda[i])
       log(lambda[i]) <- mu + siteRan[site[i]] + yearRan[year[i]] + eps[site[i],year[i]] + log(siteLength[i])
+                        +ifelse(year[i]==year2012,beta2012*leePrecip[site[i]],0)
   }
   
   #priors
@@ -18,6 +19,8 @@ cat("model{
   epsTau<-1/pow(epsSigma,-2)
   epsSigma ~ dunif(0,10)
   
+  beta2012~dnorm(0,0.01)
+
   for(t in 1:nYears){
     yearRan[t]~dnorm(0,yearTau)
   }

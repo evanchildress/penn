@@ -3,6 +3,7 @@ sims<-out$sims.list
 library(jagstools)
 library(ape)
 
+
 out
 
 sites<-data[,.(lat=mean(lat),
@@ -16,6 +17,27 @@ repeatSites<-which(sites$nYears>1)
 siteRan<-apply(sims$siteRan,2,mean)
 yearRan<-apply(sims$yearRan,2,mean)
 eps<-apply(sims$eps,c(2,3),mean)
+
+pMrBetaFlow<-mean(sims$pMrBetaFlow)
+pMrBetaWidth<-mean(sims$pMrBetaWidth)
+pMrMu<-mean(sims$muPMr)
+pDepBetaFlow<-mean(sims$pDepBetaFlow)
+pDepBetaWidth<-mean(sims$pDepBetaWidth)
+pDepMu<-mean(sims$muPDep)
+
+xFlow<-seq(-2,2,0.1)
+xWidth<-seq(-2,2,0.1)
+par(mfrow=c(1,2))
+invLogit<-function(x){1/(1+exp(-x))}
+
+plot(I(invLogit(pMrMu+xFlow*pMrBetaFlow))~xFlow,type='l',col='blue',ylim=c(0,1))
+points(I(invLogit(pDepMu+xFlow*pDepBetaFlow))~xFlow,type='l',col='red')
+
+plot(I(invLogit(pMrMu+xWidth*pMrBetaWidth))~xWidth,type='l',col='blue',ylim=c(0,1))
+points(I(invLogit(pDepMu+xWidth*pDepBetaWidth))~xWidth,type='l',col='red')
+
+par(mfrow=c(1,1))
+
 # pMrEps<-apply(sims$pMrEps,2,mean)
 # pDepEps<-apply(sims$pDepEps,2,mean)
 
@@ -59,3 +81,5 @@ points(epsMoran[which(epsMoranP<0.05)]~
 #   plot(lat~long,data=sites,pch=19,col=gray(0.8,0.5),cex=exp(logLambda[,y])/50,
 #        main=y+1975)
 # }
+
+
