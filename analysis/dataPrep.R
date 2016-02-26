@@ -1,6 +1,6 @@
 require(zoo)
 require(getWBData)
-load("C:/Users/Evan/Desktop/Conte/lee/dataStore/cleanData/niles.RDATA")
+load("~/lee/dataStore/cleanData/niles.RDATA")
 
 siteData<-siteData[,":="(lat=mean(siteLatitude),
                long=mean(siteLongitude),
