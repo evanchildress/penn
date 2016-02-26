@@ -57,7 +57,7 @@ data<-data[!is.na(siteWidth)] %>%
       setkey(siteSurveyId)
 suppressWarnings(data[,recapCount:=as.numeric(recapCount)])
 
-precip<-readRDS("C:/Users/Evan/Desktop/Conte/lee/figures/allPrecip.rds")
+precip<-readRDS("~/lee/figures/allPrecip.rds")
 getPrecip<-function(lat,long){
   precip$precip[which.min(abs(precip$lat-lat)+abs(precip$long-long))]
 }

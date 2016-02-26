@@ -11,7 +11,7 @@ source("analysis/model.R")
 
 params<-c("pMrSigma","pDepSigma","muPMr","muPDep","pMrEps","pDepEps",
           "pMrBetaWidth","pDepBetaWidth","pMrBetaFlow","pDepBetaFlow",
-          "yearSigma","siteSigma","mu","epsSigma","eps","yearRan","siteRan")
+          "yearSigma","siteSigma","mu","epsSigma","eps","yearRan","siteRan","beta2012")
 codaOnly<-c("pMrEps","pDepEps","yearRan","siteRan","eps")
 ni=14000
 nb=12000
