@@ -1,5 +1,8 @@
-require(zoo)
-require(getWBData)
+library(data.table)
+library(zoo)
+library(getWBData)
+library(readxl)
+
 load("~/lee/dataStore/cleanData/niles.RDATA")
 
 siteData<-siteData[,":="(lat=mean(siteLatitude),
@@ -23,7 +26,8 @@ fish<-fish[!is.na(length),sizeBin:=binSizes(length)] %>%
       .[,":="(recapCount=NA,estimateType="Niles")] %>%
       .[,.(siteId,siteSurveyId,site,lat,long,siteLength,siteWidth,species,sizeBin,count,recapCount,pass,estimateType,date)] %>%
       setnames(c("siteId","siteSurveyId","siteName","lat","long","siteLength","siteWidth",
-                "species","sizeBin","count","recapCount","pass","estimateType","date"))
+                "species","sizeBin","count","recapCount","pass","estimateType","date")) %>%
+      .[,surveyType:="Fish - Unassessed Waters Protocol - Population Estimate"]
 
 data<-fread("data/qrystbtpopest.csv")
 data[,date:=as.Date(SurveyDate,format="%m/%d/%Y")]
@@ -32,18 +36,19 @@ data[,Comname:=camelCase(Comname,sep=" "),by=Comname]
 setnames(data,
          c("WaterSectionID","WaterSiteSurvey_ID","WaterName","SurveySiteLatDD","SurveySiteLonDD","SiteLength_m",
            "SiteWidth_m","Comname","GroupSize","EffortCatch","DeadOrMarkedCapture","EffortNumber",
-           "EstimateType"),
+           "EstimateType","SurveyPurposeDescription"),
          c("siteId","siteSurveyId","siteName","lat","long","siteLength","siteWidth",
-           "species","sizeBin","count","recapCount","pass","estimateType"))
+           "species","sizeBin","count","recapCount","pass","estimateType","surveyType"))
 data<-data[species=="brookTrout",
            list(siteId,siteSurveyId,siteName,lat,long,siteLength,siteWidth,
                 species,sizeBin,count,recapCount,
-                 pass,estimateType,date)] %>%
+                 pass,estimateType,surveyType,date)] %>%
       .[,siteSurveyId:=as.numeric(siteSurveyId)]
 
 data<-data[!duplicated(data)] %>%
       setkey(siteSurveyId) %>%
       .[!duplicated(.[,list(siteId,siteName,lat,long,siteLength,siteWidth,species,sizeBin,count,recapCount,pass,estimateType,date)])]
+
 data<-rbind(data,fish)
 
 data[,year:=year(date)]
@@ -57,6 +62,37 @@ data<-data[!is.na(siteWidth)] %>%
       setkey(siteSurveyId)
 suppressWarnings(data[,recapCount:=as.numeric(recapCount)])
 
+
+# #subset to a single stage
+# if(stageSelect=="yoy"){
+# data<-data[sizeBin<=50]
+# } else if(stageSelect=="adult"){
+#   data<-data[sizeBin>50]
+# } else (warning("no stage selected, so all fish were included in the model"))
+
+data<-data[,.(count=sum(count,na.rm=T),
+              recapCount=sum(recapCount,na.rm=T)),
+           by=.(species,siteId,siteSurveyId,siteName,year,siteLength,siteWidth,lat,long,date,month,year,pass,estimateType)] #%>%
+  # .[,pass:=as.character(pass)]
+
+#add in surveys where no fish were caught
+zeroSurveys<-read_excel("data/paZeros.xlsx") %>%
+  data.table() %>%
+  setnames(c("WaterName","SurveySiteLatDD","SurveySiteLonDD","Water_GNIS_ID","SurveyDate",
+             "WaterTypeID","UniqueSiteSurveyID","EffortNumber","SurveyPurpose","EffortHours","GearDescription"),
+           c("siteName","lat","long","gnis","date",
+             "waterType","siteSurveyId",'pass',"surveyType","effortHours","gear")) %>%
+  .[,":="(date=as.Date(date),
+          month=month(date),
+          year=year(date))] %>%
+  .[!siteSurveyId %in% data$siteSurveyId,.(siteName,lat,long,date,waterType,siteSurveyId,pass,surveyType)] %>%
+  setkey(siteName)
+
+data[,.(siteName,siteId)] %>%
+  setkey(siteName) %>%
+  .[zeroSurveys]
+  
+  
 precip<-readRDS("~/lee/figures/allPrecip.rds")
 getPrecip<-function(lat,long){
   precip$precip[which.min(abs(precip$lat-lat)+abs(precip$long-long))]
@@ -65,17 +101,6 @@ getPrecip<-function(lat,long){
 data[,leePrecip:=getPrecip(lat,long),by=.(lat,long)]
 rm(precip)
 rm(fish)
-
-#subset to a single stage
-if(stageSelect=="yoy"){
-data<-data[sizeBin<=50]
-} else if(stageSelect=="adult"){
-  data<-data[sizeBin>50]
-} else (warning("no stage selected, so all fish were included in the model"))
-data<-data[,.(count=sum(count,na.rm=T),
-              recapCount=sum(recapCount,na.rm=T)),
-           by=.(species,siteId,siteSurveyId,siteName,year,siteLength,siteWidth,lat,long,date,month,year,pass,estimateType,leePrecip)] #%>%
-  # .[,pass:=as.character(pass)]
 
 data<-data %>% 
   filter(estimateType=="Petersen M & R"&pass==2) %>%
@@ -120,6 +145,8 @@ dailyDischarge<-readRDS("results/dailyMediansPa.rds") %>%
                                 rollmean(medianQ,nRolled),
                                 typicalFlow[((nRolled-1)/2*3+1):((nRolled-1)*2)])] %>%
                 .[,typicalFlow:=scale(typicalFlow)[,1]]
+
+data<-data[estimateType!="Petersen M & R"]
 
 jagsData<-list(#data/survey info
                y=data$count,

@@ -1,10 +1,11 @@
+library(dplyr)
+library(data.table)
 out<-readRDS("results/out.rds")
 sims<-out$sims.list
+#rm(out)
 library(jagstools)
 library(ape)
 
-
-out
 
 sites<-data[,.(lat=mean(lat),
                long=mean(long),
