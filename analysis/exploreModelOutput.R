@@ -2,7 +2,7 @@ library(dplyr)
 library(data.table)
 out<-readRDS("results/out.rds")
 sims<-out$sims.list
-#rm(out)
+rm(out)
 library(jagstools)
 library(ape)
 

@@ -13,8 +13,8 @@ params<-c("pMrSigma","pDepSigma","muPMr","muPDep","pMrEps","pDepEps",
           "pMrBetaWidth","pDepBetaWidth","pMrBetaFlow","pDepBetaFlow",
           "yearSigma","siteSigma","mu","epsSigma","eps","yearRan","siteRan","trend")
 codaOnly<-c("pMrEps","pDepEps","yearRan","siteRan","eps")
-ni=14000
-nb=12000
+ni=20000
+nb=10000
 nt=5
 nc=3
 na=2000
